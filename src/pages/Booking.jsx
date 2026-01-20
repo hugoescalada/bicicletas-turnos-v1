@@ -11,6 +11,7 @@ import { ChevronLeft, Check } from 'lucide-react';
 const steps = ['Servicio', 'Fecha', 'Hora', 'Tus Datos'];
 
 const Booking = () => {
+    const API_BASE_URL = `http://${window.location.hostname}:3000`;
     const navigate = useNavigate();
     const [currentStep, setCurrentStep] = useState(0);
     const [bookingData, setBookingData] = useState({
@@ -25,7 +26,7 @@ const Booking = () => {
 
     const handleSubmit = async () => {
         try {
-            const response = await fetch('http://localhost:3000/api/bookings', {
+            const response = await fetch(`${API_BASE_URL}/api/bookings`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

@@ -4,6 +4,7 @@ import Button from '../components/common/Button';
 import { Calendar, Clock, User, Phone, Mail, Bike, Search, Filter, Edit3, CheckCircle } from 'lucide-react';
 
 const Admin = () => {
+    const API_BASE_URL = `http://${window.location.hostname}:3000`;
     const [bookings, setBookings] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -33,7 +34,7 @@ const Admin = () => {
     };
 
     const fetchBookings = () => {
-        fetch('http://localhost:3000/api/bookings')
+        fetch(`${API_BASE_URL}/api/bookings`)
             .then(res => {
                 if (!res.ok) throw new Error('Error al cargar datos');
                 return res.json();
@@ -61,7 +62,7 @@ const Admin = () => {
         setSavingNoteId(id);
 
         try {
-            const res = await fetch(`http://localhost:3000/api/bookings/${id}`, {
+            const res = await fetch(`${API_BASE_URL}/api/bookings/${id}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ adminNotes: newNote })
@@ -83,7 +84,7 @@ const Admin = () => {
         setBookings(prev => prev.map(b => b.id === id ? { ...b, completed: newStatus } : b));
 
         try {
-            await fetch(`http://localhost:3000/api/bookings/${id}`, {
+            await fetch(`${API_BASE_URL}/api/bookings/${id}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ completed: newStatus })
@@ -492,7 +493,18 @@ const Admin = () => {
                         </div>
 
                         {loginError && (
-                            <div className="text-red-400 text-sm text-center bg-red-500/10 p-3 rounded-lg border border-red-500/20 animate-pulse">
+                            <div
+                                style={{
+                                    color: '#ff4d4d',
+                                    fontSize: '0.875rem',
+                                    textAlign: 'center',
+                                    backgroundColor: 'rgba(255, 77, 77, 0.1)',
+                                    padding: '0.75rem',
+                                    borderRadius: '0.5rem',
+                                    border: '1px solid rgba(255, 77, 77, 0.2)',
+                                    fontWeight: '600'
+                                }}
+                            >
                                 {loginError}
                             </div>
                         )}

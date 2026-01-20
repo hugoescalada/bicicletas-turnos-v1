@@ -28,25 +28,39 @@ const TimeSlots = ({ selectedTime, onSelect, selectedDate }) => {
     const filteredTimes = getFilteredTimes();
 
     return (
-        <div className="time-grid">
+        <div className="time-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '1.5rem' }}>
             {filteredTimes.length > 0 ? (
-                filteredTimes.map((time) => (
-                    <motion.button
-                        key={time}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={() => onSelect(time)}
-                        className="glass py-3 rounded-lg font-medium transition-all"
-                        style={{
-                            backgroundColor: selectedTime === time ? 'var(--color-accent)' : undefined,
-                            color: 'white',
-                            border: selectedTime === time ? 'none' : '1px solid transparent'
-                        }}
-                    >
-                        {time}
-                    </motion.button>
-                ))
+                filteredTimes.map((time) => {
+                    const isSelected = selectedTime === time;
+                    return (
+                        <motion.button
+                            key={time}
+                            whileTap={{ scale: 0.95 }}
+                            whileHover={{ backgroundColor: isSelected ? 'var(--color-primary)' : 'rgba(255, 255, 255, 0.15)' }}
+                            onClick={() => onSelect(time)}
+                            className={`flex items-center justify-center font-black text-2xl transition-all`}
+                            style={{
+                                padding: '1.25rem 1rem',
+                                background: isSelected
+                                    ? 'linear-gradient(135deg, var(--color-primary) 0%, #3b82f6 100%)'
+                                    : 'rgba(255, 255, 255, 0.08)',
+                                color: isSelected ? 'white' : 'var(--color-primary)',
+                                border: isSelected
+                                    ? '1px solid white'
+                                    : '1px solid rgba(255, 255, 255, 0.2)',
+                                borderRadius: '1rem',
+                                boxShadow: isSelected
+                                    ? '0 0 20px rgba(59, 130, 246, 0.5)'
+                                    : '0 4px 6px rgba(0, 0, 0, 0.2)',
+                                backdropFilter: 'blur(10px)'
+                            }}
+                        >
+                            {time}
+                        </motion.button>
+                    );
+                })
             ) : (
-                <div className="col-span-full py-10 text-center text-muted">
+                <div className="col-span-full py-20 text-center text-muted text-lg glass rounded-2xl">
                     No hay turnos disponibles para lo que resta del día.
                 </div>
             )}

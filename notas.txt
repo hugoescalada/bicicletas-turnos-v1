@@ -1,0 +1,8 @@
+instalar Git:
+https://git-scm.com/install/windows
+
+instalar nodejs:
+https://nodejs.org/en/download/
+
+cargar host:
+npm run dev -- --host
