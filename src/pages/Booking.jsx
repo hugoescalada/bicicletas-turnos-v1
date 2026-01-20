@@ -142,6 +142,7 @@ const Booking = () => {
                 )}
                 {currentStep === 2 && (
                     <TimeSlots
+                        selectedDate={bookingData.date}
                         selectedTime={bookingData.time}
                         onSelect={(time) => setBookingData(prev => ({ ...prev, time }))}
                     />

@@ -3,9 +3,9 @@ import Card from '../../components/common/Card';
 import { Wrench, Disc, Settings } from 'lucide-react';
 
 const services = [
-    { id: 'tuneup', name: 'Tune-Up Completo', price: '$50', icon: Settings, desc: 'Ajuste general, frenos y cambios.' },
-    { id: 'flatfix', name: 'Reparación Pinchazo', price: '$15', icon: Disc, desc: 'Cambio de cámara y revisión de cubierta.' },
-    { id: 'repair', name: 'Reparación General', price: '$80+', icon: Wrench, desc: 'Diagnóstico y reparación de fallas.' },
+    { id: 'tuneup', name: 'Tune-Up Completo', price: '$50.000', icon: Settings, desc: 'Ajuste general, frenos y cambios.' },
+    { id: 'flatfix', name: 'Reparación Pinchazo', price: '$5.000', icon: Disc, desc: 'Cambio de cámara y revisión de cubierta.' },
+    { id: 'repair', name: 'Reparación General', price: '$80.000', icon: Wrench, desc: 'Diagnóstico y reparación de fallas.' },
 ];
 
 const ServiceSelection = ({ selectedService, onSelect }) => {

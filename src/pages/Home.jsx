@@ -68,9 +68,9 @@ const Home = () => {
                 <h2 className="text-3xl font-bold mb-10 text-white">Nuestros Servicios Destacados</h2>
                 <div className="services-grid text-left">
                     {[
-                        { title: 'Tune-Up Completo', price: '$50', desc: 'Limpieza profunda, ajuste de cambios y frenos, lubricación premium.' },
-                        { title: 'Reparación Express', price: '$15', desc: 'Solución rápida para pinchazos y ajustes menores en el acto.' },
-                        { title: 'Service General', price: '$80+', desc: 'Desarme completo, revisión de rodamientos y centrado de ruedas.' }
+                        { title: 'Tune-Up Completo', price: '$50.000', desc: 'Limpieza profunda, ajuste de cambios y frenos, lubricación premium.' },
+                        { title: 'Reparación Express', price: '$15.000', desc: 'Solución rápida para pinchazos y ajustes menores en el acto.' },
+                        { title: 'Service General', price: '$40.000', desc: 'Desarme completo, revisión de rodamientos y centrado de ruedas.' }
                     ].map((s, i) => (
                         <div key={i} className="glass p-6 rounded-2xl border border-white/5 hover:border-primary/50 transition-colors" style={{ padding: '1.5rem', borderRadius: '1rem' }}>
                             <h3 className="text-xl font-bold mb-2 text-white">{s.title}</h3>

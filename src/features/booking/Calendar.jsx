@@ -5,7 +5,7 @@ const getNextDays = (days) => {
     const dates = [];
     for (let i = 0; i < days; i++) {
         const d = new Date();
-        d.setDate(d.getDate() + i + 1);
+        d.setDate(d.getDate() + i);
         dates.push(d);
     }
     return dates;
