@@ -1,14 +1,19 @@
 import React from 'react';
 import Card from '../../components/common/Card';
-import { Wrench, Disc, Settings } from 'lucide-react';
-
-const services = [
-    { id: 'tuneup', name: 'Tune-Up Completo', price: '$50.000', icon: Settings, desc: 'Ajuste general, frenos y cambios.' },
-    { id: 'flatfix', name: 'Reparación Pinchazo', price: '$5.000', icon: Disc, desc: 'Cambio de cámara y revisión de cubierta.' },
-    { id: 'repair', name: 'Reparación General', price: '$80.000', icon: Wrench, desc: 'Diagnóstico y reparación de fallas.' },
-];
+import { Wrench, Bike, Zap } from 'lucide-react';
+import { useSettings } from '../../context/SettingsContext';
 
 const ServiceSelection = ({ selectedService, onSelect }) => {
+    const { services } = useSettings();
+
+    const getIcon = (iconName) => {
+        switch (iconName?.toLowerCase()) {
+            case 'bike': return Bike;
+            case 'wrench': return Wrench;
+            case 'zap': return Zap;
+            default: return Wrench;
+        }
+    };
 
     const handleSelect = (id) => {
         onSelect(id);
@@ -64,23 +69,22 @@ const ServiceSelection = ({ selectedService, onSelect }) => {
                         <div
                             className="p-4 rounded-full flex items-center justify-center transition-colors duration-300"
                             style={{
-                                // Eliminamos completamente cualquier cambio de borde o fondo en el circulo del icono
-                                // para evitar el renderizado cuadrado indeseado del navegador.
-                                background: 'rgba(30,41,59,0.5)',
+                                background: 'transparent',
                                 border: '2px solid transparent',
                                 boxShadow: 'none',
                                 outline: 'none'
                             }}
                         >
-                            {/* Cambiamos el color del icono a Verde Eléctrico cuando está seleccionado */}
-                            <service.icon
-                                size={32}
-                                className={selectedService === service.id ? "text-accent" : "text-white"}
-                                draggable={false}
-                            />
+                            {(() => {
+                                const IconComp = getIcon(service.icon);
+                                return <IconComp
+                                    size={32}
+                                    className={selectedService === service.id ? "text-accent" : "text-white"}
+                                />
+                            })()}
                         </div>
-                        <h3 className="text-xl font-bold text-white">{service.name}</h3>
-                        <p className="text-muted">{service.desc}</p>
+                        <h3 className="text-xl font-bold text-white">{service.title}</h3>
+                        <p className="text-muted text-sm">{service.description}</p>
                         <span className="text-2xl font-bold text-accent">{service.price}</span>
                     </div>
                 </Card>

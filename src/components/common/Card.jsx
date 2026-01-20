@@ -8,7 +8,11 @@ const Card = ({ children, className = '', hover = false, ...props }) => {
             whileHover={hover ? { y: -5, boxShadow: '0 10px 30px -10px rgba(0,0,0,0.5)' } : {}}
             className={`glass rounded-2xl p-6 ${className}`}
             {...props}
-            style={{ padding: '1.5rem', borderRadius: '1rem' }} // Ensuring padding/radius even if classes fail
+            style={{
+                padding: '1.5rem',
+                borderRadius: '1rem',
+                ...props.style
+            }}
         >
             {children}
         </motion.div>

@@ -2,10 +2,13 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import Button from '../components/common/Button';
-import { ArrowRight, Star } from 'lucide-react';
+import { ArrowRight, Star, Wrench, Bike, Zap } from 'lucide-react';
+import { useSettings } from '../context/SettingsContext';
+import Card from '../components/common/Card';
 
 const Home = () => {
     const navigate = useNavigate();
+    const { settings, services } = useSettings();
 
     return (
         <div className="container flex-col items-center justify-center text-center relative" style={{ minHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
@@ -23,7 +26,7 @@ const Home = () => {
                         border: '1px solid rgba(59,130,246,0.2)',
                         color: 'var(--color-primary)'
                     }}>
-                        ✨ Servicio Premium de Bicicletas
+                        ✨ Servicio Premium de {settings.businessName}
                     </span>
                 </div>
 
@@ -67,22 +70,37 @@ const Home = () => {
             <div id="services-preview" className="w-full mt-32 mb-20 services-section">
                 <h2 className="text-3xl font-bold mb-10 text-white">Nuestros Servicios Destacados</h2>
                 <div className="services-grid text-left">
-                    {[
-                        { title: 'Tune-Up Completo', price: '$50.000', desc: 'Limpieza profunda, ajuste de cambios y frenos, lubricación premium.' },
-                        { title: 'Reparación Express', price: '$15.000', desc: 'Solución rápida para pinchazos y ajustes menores en el acto.' },
-                        { title: 'Service General', price: '$40.000', desc: 'Desarme completo, revisión de rodamientos y centrado de ruedas.' }
-                    ].map((s, i) => (
-                        <div key={i} className="glass p-6 rounded-2xl border border-white/5 hover:border-primary/50 transition-colors" style={{ padding: '1.5rem', borderRadius: '1rem' }}>
-                            <h3 className="text-xl font-bold mb-2 text-white">{s.title}</h3>
-                            <p className="text-muted mb-4">{s.desc}</p>
-                            <div className="flex justify-between items-center">
-                                <span className="text-2xl font-bold text-accent">{s.price}</span>
-                                <Button variant="ghost" onClick={() => navigate('/reservar')} style={{ fontSize: '0.9rem' }}>
-                                    Agendar
-                                </Button>
-                            </div>
-                        </div>
-                    ))}
+                    {services.map((s, i) => {
+                        const IconComponent = s.icon === 'bike' ? Bike : (s.icon === 'wrench' ? Wrench : Zap);
+                        return (
+                            <Card
+                                key={s.id || i}
+                                hover={true}
+                                className="cursor-pointer transition-all duration-300"
+                                style={{
+                                    border: '2px solid transparent',
+                                    background: 'rgba(30, 41, 59, 0.4)',
+                                    position: 'relative'
+                                }}
+                                onClick={() => navigate('/reservar')}
+                            >
+                                <div className="flex-col items-center text-center gap-4 flex">
+                                    <div
+                                        className="p-4 rounded-full flex items-center justify-center transition-colors duration-300"
+                                        style={{
+                                            background: 'transparent',
+                                            border: '2px solid transparent'
+                                        }}
+                                    >
+                                        <IconComponent size={32} className="text-white" />
+                                    </div>
+                                    <h3 className="text-xl font-bold text-white">{s.title}</h3>
+                                    <p className="text-muted text-sm">{s.description}</p>
+                                    <span className="text-2xl font-bold text-accent">{s.price}</span>
+                                </div>
+                            </Card>
+                        );
+                    })}
                 </div>
             </div>
         </div>

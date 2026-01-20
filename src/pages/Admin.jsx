@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import Card from '../components/common/Card';
 import Button from '../components/common/Button';
-import { Calendar, Clock, User, Phone, Mail, Bike, Search, Filter, Edit3, CheckCircle } from 'lucide-react';
+import { Calendar, Clock, User, Phone, Mail, Bike, Search, Filter, Edit3, CheckCircle, Printer, MessageCircle, Settings, Wrench, Shield, Zap, X, Save } from 'lucide-react';
+import { useSettings } from '../context/SettingsContext';
 
 const Admin = () => {
+    const { settings, updateSettings } = useSettings();
     const API_BASE_URL = `http://${window.location.hostname}:3000`;
     const [bookings, setBookings] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -25,9 +27,33 @@ const Admin = () => {
     // Notes State (para feedback visual de guardado)
     const [savingNoteId, setSavingNoteId] = useState(null);
 
+    // Modals State
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+    const [isServicesOpen, setIsServicesOpen] = useState(false);
+    const { services, updateService } = useSettings();
+    const [tempSettings, setTempSettings] = useState({
+        businessName: '',
+        adminPassword: '',
+        businessLogo: ''
+    });
+    const [tempServices, setTempServices] = useState([]);
+
+    useEffect(() => {
+        if (settings) {
+            setTempSettings({
+                businessName: settings.businessName || '',
+                adminPassword: settings.adminPassword || '',
+                businessLogo: settings.businessLogo || 'bike'
+            });
+        }
+        if (services) {
+            setTempServices(services);
+        }
+    }, [settings, services]);
+
     const handleLogin = (e) => {
         e.preventDefault();
-        if (username === 'admin' && password === 'admin123') {
+        if (username === 'admin' && password === settings.adminPassword) {
             setIsLoggedIn(true);
             localStorage.setItem('isAdminLoggedIn', 'true');
             setLoginError('');
@@ -90,6 +116,27 @@ const Admin = () => {
         }
     };
 
+    const handleUpdateBooking = async (id, updates) => {
+        // Optimistic update
+        setBookings(prev => prev.map(b => b.id === id ? { ...b, ...updates } : b));
+        setSavingNoteId(id); // Reusar para feedback visual
+
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/bookings/${id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updates)
+            });
+
+            if (!res.ok) throw new Error('Failed to update');
+            setTimeout(() => setSavingNoteId(null), 1000);
+        } catch (err) {
+            console.error(err);
+            setSavingNoteId(null);
+            fetchBookings(); // Recargar en caso de error
+        }
+    };
+
     const handleToggleStatus = async (id, currentStatus) => {
         const newStatus = !currentStatus;
         // Optimistic update
@@ -106,6 +153,88 @@ const Admin = () => {
             // Revert on error
             setBookings(prev => prev.map(b => b.id === id ? { ...b, completed: currentStatus } : b));
         }
+    };
+
+    const handlePrintReport = (booking) => {
+        const printWindow = window.open('', '_blank');
+        const dateStr = formatDate(booking.date);
+
+        printWindow.document.write(`
+            <html>
+                <head>
+                    <title>Reporte de Servicio - #${booking.id}</title>
+                    <style>
+                        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 40px; color: #333; }
+                        .header { border-bottom: 2px solid #3b82f6; padding-bottom: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+                        .title { font-size: 24px; font-weight: bold; color: #1e293b; }
+                        .id { font-size: 18px; color: #64748b; }
+                        .section { margin-bottom: 25px; }
+                        .section-title { font-size: 14px; text-transform: uppercase; color: #64748b; font-weight: bold; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; }
+                        .data-row { display: flex; margin-bottom: 5px; }
+                        .label { width: 120px; font-weight: bold; color: #475569; }
+                        .value { flex: 1; }
+                        .notes-box { background: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; border-radius: 8px; white-space: pre-wrap; margin-top: 10px; min-height: 100px; }
+                        .footer { margin-top: 50px; font-size: 12px; color: #94a3b8; text-align: center; border-top: 1px solid #e2e8f0; padding-top: 10px; }
+                        @media print { .no-print { display: none; } }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <div class="title">ORDEN DE SERVICIO</div>
+                        <div class="id">ID: #${booking.id}</div>
+                    </div>
+
+                    <div class="section">
+                        <div class="section-title">Datos del Cliente</div>
+                        <div class="data-row"><div class="label">Nombre:</div><div class="value">${booking.clientName}</div></div>
+                        <div class="data-row"><div class="label">Teléfono:</div><div class="value">${booking.clientPhone}</div></div>
+                        <div class="data-row"><div class="label">Email:</div><div class="value">${booking.clientEmail}</div></div>
+                    </div>
+
+                    <div class="section">
+                        <div class="section-title">Detalles del Turno</div>
+                        <div class="data-row"><div class="label">Servicio:</div><div class="value">${getServiceLabel(booking.serviceId)}</div></div>
+                        <div class="data-row"><div class="label">Bicicleta:</div><div class="value">${booking.bikeModel || 'No especificado'}</div></div>
+                        <div class="data-row"><div class="label">Fecha:</div><div class="value">${dateStr}</div></div>
+                        <div class="data-row"><div class="label">Hora:</div><div class="value">${booking.time} Hs</div></div>
+                    </div>
+
+                    <div class="section">
+                        <div class="section-title">Notas del Técnico</div>
+                        <div class="notes-box">${booking.adminNotes || 'Sin notas adicionales registradas.'}</div>
+                    </div>
+
+                    <div class="footer">
+                        ${settings.businessName} - Gestión de Taller Integral<br>
+                        Documento generado el ${new Date().toLocaleString()}
+                    </div>
+
+                    <script>
+                        window.onload = function() { setTimeout(() => { window.print(); window.close(); }, 500); };
+                    </script>
+                </body>
+            </html>
+        `);
+        printWindow.document.close();
+    };
+
+    const handleWhatsAppReminder = (booking) => {
+        // Limpiar el número de teléfono (solo números)
+        const cleanPhone = booking.clientPhone.replace(/\D/g, '');
+
+        // Si el número no tiene el prefijo de país (asumiendo Argentina 54), se lo agregamos
+        const phoneWithCountry = cleanPhone.length <= 10 ? `54${cleanPhone}` : cleanPhone;
+
+        let message = "";
+        if (booking.completed) {
+            message = `Hola ${booking.clientName}, ¡tu bicicleta ya está lista! 🚲 Puedes pasar a retirarla por el taller ${settings.businessName}.`;
+            if (booking.adminNotes) message += `\n\n*Notas del servicio:* ${booking.adminNotes}`;
+        } else {
+            message = `Hola ${booking.clientName}, te recordamos tu turno en ${settings.businessName} para el día ${formatDate(booking.date)} a las ${booking.time} Hs. ¡Te esperamos! 🚲`;
+        }
+
+        const encodedMsg = encodeURIComponent(message);
+        window.open(`https://wa.me/${phoneWithCountry}?text=${encodedMsg}`, '_blank');
     };
 
     // Filtrado de datos
@@ -139,12 +268,8 @@ const Admin = () => {
     };
 
     const getServiceLabel = (id) => {
-        switch (id) {
-            case 'tuneup': return 'Tune-Up Completo';
-            case 'flatfix': return 'Reparación Pinchazo';
-            case 'repair': return 'Reparación General';
-            default: return id;
-        }
+        const service = services.find(s => s.id === id);
+        return service ? service.title : id;
     };
 
     const getServiceColor = (id) => {
@@ -254,6 +379,28 @@ const Admin = () => {
         .client-sub {
             font-size: 0.8rem;
             color: var(--color-text-muted);
+        }
+        .editable-table-input {
+            background: transparent;
+            border: 1px solid transparent;
+            color: inherit;
+            font-family: 'Outfit', sans-serif;
+            padding: 4px 8px;
+            border-radius: 6px;
+            transition: all 0.2s;
+            width: 100%;
+            display: block;
+            margin-left: -8px; /* Offset padding to keep text aligned */
+        }
+        .editable-table-input:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+        .editable-table-input:focus {
+            background: rgba(15, 23, 42, 0.8);
+            border-color: var(--color-primary);
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
         }
         .service-badge {
             display: inline-block;
@@ -569,7 +716,7 @@ const Admin = () => {
                         </button>
                     </div>
 
-                    <div className="flex items-center justify-between md:justify-end gap-4 md:gap-8 w-full md:w-auto">
+                    <div className="flex items-center justify-between md:justify-end gap-4 md:gap-5 w-full md:w-auto">
                         <span className="status-badge-count flex-1 md:flex-none">
                             <span className="count-label">Mostrando</span>
                             <span className="count-value">{filteredBookings.length}</span>
@@ -577,13 +724,36 @@ const Admin = () => {
 
                         <div className="hidden md:block h-4 w-[1px] bg-white/10" />
 
-                        <Button
-                            onClick={handleLogout}
-                            variant="ghost"
-                            className="text-xs font-bold uppercase tracking-widest opacity-60 hover:opacity-100 hover:text-red-400 transition-all p-0 whitespace-nowrap"
-                        >
-                            Cerrar Sesión
-                        </Button>
+                        <div className="flex items-center" style={{ gap: '15px' }}>
+                            <Button
+                                onClick={() => setIsSettingsOpen(true)}
+                                variant="ghost"
+                                className="text-xs font-bold uppercase tracking-widest opacity-60 hover:opacity-100 hover:text-accent transition-all flex items-center gap-1.5"
+                                style={{ padding: '8px 12px' }}
+                                title="Ajustes del Negocio"
+                            >
+                                <Settings size={14} /> <span className="hidden sm:inline">Config</span>
+                            </Button>
+
+                            <Button
+                                onClick={() => setIsServicesOpen(true)}
+                                variant="ghost"
+                                className="text-xs font-bold uppercase tracking-widest opacity-60 hover:opacity-100 hover:text-primary transition-all flex items-center gap-1.5"
+                                style={{ padding: '8px 12px' }}
+                                title="Gestionar Servicios"
+                            >
+                                <Wrench size={14} /> <span className="hidden sm:inline">Servicios</span>
+                            </Button>
+
+                            <Button
+                                onClick={handleLogout}
+                                variant="ghost"
+                                className="text-xs font-bold uppercase tracking-widest opacity-60 hover:opacity-100 hover:text-red-400 transition-all whitespace-nowrap"
+                                style={{ padding: '8px 12px' }}
+                            >
+                                Salir
+                            </Button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -603,18 +773,19 @@ const Admin = () => {
                     />
                 </div>
                 <div className="status-segment-control">
-                    {[
-                        { id: 'all', label: 'Todos' },
-                        { id: 'tuneup', label: 'Tune-Up' },
-                        { id: 'flatfix', label: 'Pinchazo' },
-                        { id: 'repair', label: 'Reparación' },
-                    ].map(type => (
+                    <button
+                        onClick={() => setFilterService('all')}
+                        className={`segment-btn ${filterService === 'all' ? 'active all' : ''}`}
+                    >
+                        Todos
+                    </button>
+                    {services.map(service => (
                         <button
-                            key={type.id}
-                            onClick={() => setFilterService(type.id)}
-                            className={`segment-btn ${filterService === type.id ? 'active all' : ''}`}
+                            key={service.id}
+                            onClick={() => setFilterService(service.id)}
+                            className={`segment-btn ${filterService === service.id ? 'active all' : ''}`}
                         >
-                            {type.label}
+                            {service.title.split(' ')[0]}
                         </button>
                     ))}
                 </div>
@@ -639,6 +810,7 @@ const Admin = () => {
                                 <th style={{ minWidth: '140px' }}>Fecha</th>
                                 <th style={{ minWidth: '180px' }}>Nota Interna</th>
                                 <th style={{ width: '100px', textAlign: 'center' }}>Estado</th>
+                                <th style={{ width: '120px', textAlign: 'center' }}>Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -647,9 +819,29 @@ const Admin = () => {
                                     <td data-label="ID" className="text-muted font-mono">#{booking.id}</td>
                                     <td data-label="Cliente">
                                         <div className="client-info">
-                                            <div className="font-bold text-white">{booking.clientName}</div>
-                                            <span className="client-sub">{booking.clientPhone}</span>
-                                            <span className="client-sub text-xs opacity-75">{booking.clientEmail}</span>
+                                            <input
+                                                type="text"
+                                                className="editable-table-input font-bold text-white"
+                                                defaultValue={booking.clientName}
+                                                onBlur={(e) => {
+                                                    const val = e.target.value.trim();
+                                                    if (val && val !== booking.clientName) {
+                                                        handleUpdateBooking(booking.id, { clientName: val });
+                                                    }
+                                                }}
+                                            />
+                                            <input
+                                                type="text"
+                                                className="editable-table-input client-sub"
+                                                defaultValue={booking.clientPhone}
+                                                onBlur={(e) => {
+                                                    const val = e.target.value.trim();
+                                                    if (val && val !== booking.clientPhone) {
+                                                        handleUpdateBooking(booking.id, { clientPhone: val });
+                                                    }
+                                                }}
+                                            />
+                                            <span className="client-sub text-xs opacity-75" style={{ paddingLeft: '8px' }}>{booking.clientEmail}</span>
                                         </div>
                                     </td>
                                     <td data-label="Servicio">
@@ -665,9 +857,20 @@ const Admin = () => {
                                             >
                                                 {getServiceLabel(booking.serviceId)}
                                             </span>
-                                            <div className="flex items-center gap-1 text-muted text-xs">
-                                                <Bike size={12} />
-                                                <span>{booking.bikeModel || 'N/A'}</span>
+                                            <div className="flex items-center gap-1 text-muted text-xs w-full">
+                                                <Bike size={12} className="shrink-0" />
+                                                <input
+                                                    type="text"
+                                                    className="editable-table-input text-muted text-xs"
+                                                    defaultValue={booking.bikeModel || ''}
+                                                    placeholder="Modelo bici..."
+                                                    onBlur={(e) => {
+                                                        const val = e.target.value.trim();
+                                                        if (val !== (booking.bikeModel || '')) {
+                                                            handleUpdateBooking(booking.id, { bikeModel: val });
+                                                        }
+                                                    }}
+                                                />
                                             </div>
                                         </div>
                                     </td>
@@ -735,10 +938,257 @@ const Admin = () => {
                                             </span>
                                         </div>
                                     </td>
+                                    <td data-label="Acciones" style={{ textAlign: 'center' }}>
+                                        <div className="flex items-center justify-center gap-2">
+                                            <Button
+                                                variant="ghost"
+                                                onClick={() => handlePrintReport(booking)}
+                                                className="p-2 opacity-60 hover:opacity-100 hover:text-accent transition-all"
+                                                title="Imprimir Orden"
+                                            >
+                                                <Printer size={18} />
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                onClick={() => handleWhatsAppReminder(booking)}
+                                                className="p-2 opacity-60 hover:opacity-100 hover:text-green-400 transition-all"
+                                                title="Enviar WhatsApp"
+                                            >
+                                                <MessageCircle size={18} />
+                                            </Button>
+                                        </div>
+                                    </td>
                                 </tr>
                             ))}
                         </tbody>
                     </table>
+                </div>
+            )}
+            {/* Config Modal - Business Settings */}
+            {isSettingsOpen && (
+                <div
+                    className="fixed inset-0 flex items-center justify-center p-4"
+                    style={{
+                        zIndex: 9999,
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        width: '100vw',
+                        height: '100vh',
+                        backgroundColor: 'rgba(0, 0, 0, 0.75)',
+                        backdropFilter: 'blur(4px)'
+                    }}
+                >
+                    <div className="absolute inset-0" onClick={() => setIsSettingsOpen(false)} />
+                    <Card
+                        className="relative z-10 glass border-white/10 bg-slate-900/95 shadow-2xl custom-scrollbar"
+                        style={{
+                            width: '90%',
+                            maxWidth: '500px',
+                            margin: 'auto',
+                            maxHeight: '85vh',
+                            overflowY: 'auto'
+                        }}
+                    >
+                        <div className="flex justify-between items-center mb-6">
+                            <h3 className="text-2xl font-bold text-white flex items-center gap-2">
+                                <Settings className="text-accent" /> Datos del Negocio
+                            </h3>
+                            <button onClick={() => setIsSettingsOpen(false)} className="text-muted hover:text-white transition-colors p-1">
+                                <X size={24} />
+                            </button>
+                        </div>
+
+                        <div className="flex flex-col gap-6">
+                            <div className="flex flex-col gap-2">
+                                <label className="text-xs font-bold uppercase text-muted tracking-widest">Nombre del Negocio</label>
+                                <input
+                                    type="text"
+                                    className="search-input"
+                                    style={{ paddingLeft: '1rem', width: '100%' }}
+                                    value={tempSettings.businessName}
+                                    onChange={(e) => setTempSettings({ ...tempSettings, businessName: e.target.value })}
+                                />
+                            </div>
+
+                            <div className="flex flex-col gap-2">
+                                <label className="text-xs font-bold uppercase text-muted tracking-widest">Contraseña Admin</label>
+                                <input
+                                    type="password"
+                                    className="search-input"
+                                    style={{ paddingLeft: '1rem', width: '100%' }}
+                                    value={tempSettings.adminPassword}
+                                    onChange={(e) => setTempSettings({ ...tempSettings, adminPassword: e.target.value })}
+                                />
+                            </div>
+
+                            <div className="flex flex-col gap-2">
+                                <label className="text-xs font-bold uppercase text-muted tracking-widest">Icono del Logo Superior</label>
+                                <div
+                                    className="bg-white/5 rounded-xl border border-white/5"
+                                    style={{ display: 'flex', flexDirection: 'row', gap: '12px', padding: '12px', justifyContent: 'flex-start', flexWrap: 'wrap' }}
+                                >
+                                    {[
+                                        { id: 'bike', icon: Bike },
+                                        { id: 'wrench', icon: Wrench },
+                                        { id: 'shield', icon: Shield },
+                                        { id: 'zap', icon: Zap }
+                                    ].map((item) => (
+                                        <button
+                                            key={item.id}
+                                            type="button"
+                                            onClick={() => setTempSettings({ ...tempSettings, businessLogo: item.id })}
+                                            className="transition-all flex justify-center items-center"
+                                            style={{
+                                                padding: '12px', borderRadius: '8px', width: '50px', height: '50px',
+                                                backgroundColor: tempSettings.businessLogo === item.id ? 'var(--color-primary)' : 'rgba(255,255,255,0.05)',
+                                                color: tempSettings.businessLogo === item.id ? 'white' : 'var(--color-text-muted)',
+                                                border: 'none', cursor: 'pointer', transform: tempSettings.businessLogo === item.id ? 'scale(1.1)' : 'scale(1)'
+                                            }}
+                                        >
+                                            <item.icon size={24} />
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="flex gap-4 mt-32">
+                                <Button
+                                    className="flex-1 justify-center py-4 font-bold"
+                                    onClick={async () => {
+                                        const success = await updateSettings(tempSettings);
+                                        if (success) setIsSettingsOpen(false);
+                                    }}
+                                >
+                                    <Save size={18} /> Guardar Cambios del Negocio
+                                </Button>
+                            </div>
+                        </div>
+                    </Card>
+                </div>
+            )}
+
+            {/* Services Modal - Service Management */}
+            {isServicesOpen && (
+                <div
+                    className="fixed inset-0 flex items-center justify-center p-4"
+                    style={{
+                        zIndex: 9999,
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        width: '100vw',
+                        height: '100vh',
+                        backgroundColor: 'rgba(0, 0, 0, 0.75)',
+                        backdropFilter: 'blur(4px)'
+                    }}
+                >
+                    <div className="absolute inset-0" onClick={() => setIsServicesOpen(false)} />
+                    <Card
+                        className="relative z-10 glass border-white/10 bg-slate-900/95 shadow-2xl custom-scrollbar"
+                        style={{
+                            width: '90%',
+                            maxWidth: '600px',
+                            margin: 'auto',
+                            maxHeight: '85vh',
+                            overflowY: 'auto'
+                        }}
+                    >
+                        <div className="flex justify-between items-center mb-6">
+                            <h3 className="text-2xl font-bold text-white flex items-center gap-2">
+                                <Wrench className="text-primary" /> Gestión de Servicios
+                            </h3>
+                            <button onClick={() => setIsServicesOpen(false)} className="text-muted hover:text-white transition-colors p-1">
+                                <X size={24} />
+                            </button>
+                        </div>
+
+                        <div className="flex flex-col gap-6">
+                            <div className="flex flex-col gap-6 max-h-[450px] overflow-y-auto pr-2 pb-12 custom-scrollbar">
+                                {tempServices.map((service, sIdx) => (
+                                    <div key={service.id} className="p-4 bg-white/5 rounded-2xl border border-white/5 flex flex-col gap-4">
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-xs font-black text-primary uppercase">Servicio #{sIdx + 1}</span>
+                                            <div className="flex gap-2">
+                                                {['bike', 'wrench', 'zap'].map(iconId => {
+                                                    const IconItem = iconId === 'bike' ? Bike : (iconId === 'wrench' ? Wrench : Zap);
+                                                    return (
+                                                        <button
+                                                            key={iconId}
+                                                            onClick={() => {
+                                                                const newServs = [...tempServices];
+                                                                newServs[sIdx] = { ...newServs[sIdx], icon: iconId };
+                                                                setTempServices(newServs);
+                                                            }}
+                                                            className={`p-1.5 rounded-md transition-all ${service.icon === iconId ? 'bg-primary text-white shadow-lg' : 'text-muted hover:text-white hover:bg-white/5'}`}
+                                                        >
+                                                            <IconItem size={16} />
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div className="flex flex-col gap-1">
+                                                <label className="text-[10px] uppercase font-bold text-muted">Título</label>
+                                                <input
+                                                    className="search-input text-sm p-2"
+                                                    style={{ paddingLeft: '0.75rem' }}
+                                                    value={service.title}
+                                                    onChange={(e) => {
+                                                        const newServs = [...tempServices];
+                                                        newServs[sIdx] = { ...newServs[sIdx], title: e.target.value };
+                                                        setTempServices(newServs);
+                                                    }}
+                                                />
+                                            </div>
+                                            <div className="flex flex-col gap-1">
+                                                <label className="text-[10px] uppercase font-bold text-muted">Precio</label>
+                                                <input
+                                                    className="search-input text-sm p-2"
+                                                    style={{ paddingLeft: '0.75rem' }}
+                                                    value={service.price}
+                                                    onChange={(e) => {
+                                                        const newServs = [...tempServices];
+                                                        newServs[sIdx] = { ...newServs[sIdx], price: e.target.value };
+                                                        setTempServices(newServs);
+                                                    }}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="flex flex-col gap-1">
+                                            <label className="text-[10px] uppercase font-bold text-muted">Descripción</label>
+                                            <textarea
+                                                className="search-input text-sm p-2 min-h-[60px]"
+                                                style={{ paddingLeft: '0.75rem', resize: 'none' }}
+                                                value={service.description}
+                                                onChange={(e) => {
+                                                    const newServs = [...tempServices];
+                                                    newServs[sIdx] = { ...newServs[sIdx], description: e.target.value };
+                                                    setTempServices(newServs);
+                                                }}
+                                            />
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <div className="flex gap-4 mt-32">
+                                <Button
+                                    className="flex-1 justify-center py-4 font-bold"
+                                    onClick={async () => {
+                                        const servicePromises = tempServices.map(s => updateService(s.id, s));
+                                        await Promise.all(servicePromises);
+                                        setIsServicesOpen(false);
+                                    }}
+                                >
+                                    <Save size={18} /> Guardar Todos los Servicios
+                                </Button>
+                            </div>
+                        </div>
+                    </Card>
                 </div>
             )}
         </div>

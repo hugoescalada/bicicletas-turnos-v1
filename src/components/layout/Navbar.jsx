@@ -1,17 +1,29 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Bike, UserCircle } from 'lucide-react';
+import { Bike, UserCircle, Wrench, Shield, Zap } from 'lucide-react';
 import Button from '../common/Button';
+import { useSettings } from '../../context/SettingsContext';
 
 const Navbar = () => {
     const navigate = useNavigate();
+    const { settings } = useSettings();
+
+    const getIcon = (iconName) => {
+        switch (iconName?.toLowerCase()) {
+            case 'bike': return <Bike className="text-accent" size={32} />;
+            case 'wrench': return <Wrench className="text-accent" size={32} />;
+            case 'shield': return <Shield className="text-accent" size={32} />;
+            case 'zap': return <Zap className="text-accent" size={32} />;
+            default: return <Bike className="text-accent" size={32} />;
+        }
+    };
 
     return (
         <nav className="navbar glass">
             <div className="container w-full flex justify-between items-center">
                 <Link to="/" className="flex items-center gap-2 text-xl font-bold">
-                    <Bike className="text-accent" size={32} />
-                    <span className="text-white">Cycle<span className="text-gradient">Fix</span></span>
+                    {getIcon(settings.businessLogo)}
+                    <span className="text-white">{settings.businessName}</span>
                 </Link>
                 <div className="flex items-center gap-2 md:gap-4">
                     <Link to="/reservar" className="nav-btn-primary transition-colors text-sm md:text-base">

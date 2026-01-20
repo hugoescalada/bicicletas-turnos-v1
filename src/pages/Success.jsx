@@ -3,9 +3,11 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import Button from '../components/common/Button';
 import { CheckCircle } from 'lucide-react';
+import { useSettings } from '../context/SettingsContext';
 
 const Success = () => {
     const navigate = useNavigate();
+    const { settings } = useSettings();
 
     return (
         <div className="container flex-col items-center justify-center text-center" style={{ minHeight: '60vh', display: 'flex' }}>
@@ -19,7 +21,7 @@ const Success = () => {
                 </div>
                 <h1 className="text-4xl font-bold mb-4">¡Reserva Confirmada!</h1>
                 <p className="text-muted" style={{ maxWidth: '400px', margin: '0 auto 2rem' }}>
-                    Te hemos enviado los detalles a tu correo electrónico. Te esperamos en CycleFix para dejar tu bici como nueva.
+                    Te hemos enviado los detalles a tu correo electrónico. Te esperamos en {settings.businessName} para dejar tu bici como nueva.
                 </p>
                 <Button onClick={() => navigate('/')}>
                     Volver al Inicio

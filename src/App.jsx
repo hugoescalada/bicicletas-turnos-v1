@@ -4,17 +4,20 @@ import Home from './pages/Home';
 import Booking from './pages/Booking';
 import Success from './pages/Success';
 import Admin from './pages/Admin';
+import { SettingsProvider } from './context/SettingsContext';
 
 function App() {
     return (
-        <Routes>
-            <Route path="/" element={<Layout />}>
-                <Route index element={<Home />} />
-                <Route path="reservar" element={<Booking />} />
-                <Route path="exito" element={<Success />} />
-                <Route path="admin" element={<Admin />} />
-            </Route>
-        </Routes>
+        <SettingsProvider>
+            <Routes>
+                <Route path="/" element={<Layout />}>
+                    <Route index element={<Home />} />
+                    <Route path="reservar" element={<Booking />} />
+                    <Route path="exito" element={<Success />} />
+                    <Route path="admin" element={<Admin />} />
+                </Route>
+            </Routes>
+        </SettingsProvider>
     );
 }
 

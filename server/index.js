@@ -55,6 +55,45 @@ const db = new sqlite.Database(dbPath, (err) => {
                         console.log("Schema updated: completed column added.");
                     }
                 });
+
+                // 4. Create Settings table
+                db.run(`CREATE TABLE IF NOT EXISTS settings (
+                    key TEXT PRIMARY KEY,
+                    value TEXT
+                )`, (err) => {
+                    if (!err) {
+                        // Initialize default settings if they don't exist
+                        const defaults = [
+                            ['businessName', 'CycleFix'],
+                            ['adminPassword', 'admin123'],
+                            ['businessLogo', 'bike'] // key of lucide icon or a URL
+                        ];
+
+                        defaults.forEach(([key, val]) => {
+                            db.run(`INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)`, [key, val]);
+                        });
+                    }
+                });
+
+                // 5. Create Services table
+                db.run(`CREATE TABLE IF NOT EXISTS services (
+                    id TEXT PRIMARY KEY,
+                    title TEXT,
+                    description TEXT,
+                    price TEXT,
+                    icon TEXT
+                )`, (err) => {
+                    if (!err) {
+                        const defaultServices = [
+                            ['tuneup', 'Tune-Up Completo', 'Limpieza profunda, ajuste de cambios y frenos, lubricación premium.', '$50.000', 'wrench'],
+                            ['flatfix', 'Reparación Pinchazo', 'Solución rápida para pinchazos y ajustes menores en el acto.', '$15.000', 'bike'],
+                            ['repair', 'Reparación General', 'Desarme completo, revisión de rodamientos y centrado de ruedas.', '$40.000', 'zap']
+                        ];
+                        defaultServices.forEach(([id, title, desc, price, icon]) => {
+                            db.run(`INSERT OR IGNORE INTO services (id, title, description, price, icon) VALUES (?, ?, ?, ?, ?)`, [id, title, desc, price, icon]);
+                        });
+                    }
+                });
             }
         });
     }
@@ -99,9 +138,9 @@ app.post('/api/bookings', (req, res) => {
     });
 });
 
-// Update booking (notes or status)
+// Update booking (notes, status, or client info)
 app.patch('/api/bookings/:id', (req, res) => {
-    const { adminNotes, completed } = req.body;
+    const { adminNotes, completed, clientName, clientPhone, bikeModel } = req.body;
     const { id } = req.params;
 
     let sql = `UPDATE bookings SET `;
@@ -118,6 +157,21 @@ app.patch('/api/bookings/:id', (req, res) => {
         params.push(completed ? 1 : 0);
     }
 
+    if (clientName !== undefined) {
+        updates.push(`clientName = ?`);
+        params.push(clientName);
+    }
+
+    if (clientPhone !== undefined) {
+        updates.push(`clientPhone = ?`);
+        params.push(clientPhone);
+    }
+
+    if (bikeModel !== undefined) {
+        updates.push(`bikeModel = ?`);
+        params.push(bikeModel);
+    }
+
     if (updates.length === 0) {
         return res.status(400).json({ error: 'No fields to update' });
     }
@@ -132,9 +186,80 @@ app.patch('/api/bookings/:id', (req, res) => {
         }
         res.json({
             message: 'Booking updated successfully',
-            data: { id, adminNotes, completed },
+            data: { id, ...req.body },
             changes: this.changes
         });
+    });
+});
+
+// Settings Endpoints
+app.get('/api/settings', (req, res) => {
+    db.all("SELECT * FROM settings", [], (err, rows) => {
+        if (err) {
+            res.status(400).json({ error: err.message });
+            return;
+        }
+        const settings = {};
+        rows.forEach(row => settings[row.key] = row.value);
+        res.json({ data: settings });
+    });
+});
+
+app.patch('/api/settings', (req, res) => {
+    const updates = req.body; // e.g., { businessName: 'New Name', ... }
+    const keys = Object.keys(updates);
+
+    if (keys.length === 0) {
+        return res.status(400).json({ error: 'No settings to update' });
+    }
+
+    db.serialize(() => {
+        const stmt = db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)");
+        keys.forEach(key => {
+            stmt.run(key, updates[key]);
+        });
+        stmt.finalize((err) => {
+            if (err) {
+                res.status(400).json({ error: err.message });
+                return;
+            }
+            res.json({ message: 'Settings updated successfully' });
+        });
+    });
+});
+
+// Services Endpoints
+app.get('/api/services', (req, res) => {
+    db.all("SELECT * FROM services", [], (err, rows) => {
+        if (err) {
+            res.status(400).json({ error: err.message });
+            return;
+        }
+        res.json({ data: rows });
+    });
+});
+
+app.patch('/api/services/:id', (req, res) => {
+    const { title, description, price, icon } = req.body;
+    const { id } = req.params;
+
+    let sql = `UPDATE services SET `;
+    let params = [];
+    const updates = [];
+
+    if (title !== undefined) { updates.push(`title = ?`); params.push(title); }
+    if (description !== undefined) { updates.push(`description = ?`); params.push(description); }
+    if (price !== undefined) { updates.push(`price = ?`); params.push(price); }
+    if (icon !== undefined) { updates.push(`icon = ?`); params.push(icon); }
+
+    if (updates.length === 0) return res.status(400).json({ error: 'No fields to update' });
+
+    sql += updates.join(', ') + ` WHERE id = ?`;
+    params.push(id);
+
+    db.run(sql, params, function (err) {
+        if (err) return res.status(400).json({ error: err.message });
+        res.json({ message: 'Service updated successfully', changes: this.changes });
     });
 });
 
