@@ -772,10 +772,11 @@ const Admin = () => {
                         className="search-input"
                     />
                 </div>
-                <div className="status-segment-control">
+                <div className="status-segment-control" style={{ overflowX: 'auto', display: 'flex', gap: '0.5rem', paddingBottom: '0.25rem' }}>
                     <button
                         onClick={() => setFilterService('all')}
                         className={`segment-btn ${filterService === 'all' ? 'active all' : ''}`}
+                        style={{ flexShrink: 0 }}
                     >
                         Todos
                     </button>
@@ -784,6 +785,7 @@ const Admin = () => {
                             key={service.id}
                             onClick={() => setFilterService(service.id)}
                             className={`segment-btn ${filterService === service.id ? 'active all' : ''}`}
+                            style={{ flexShrink: 0 }}
                         >
                             {service.title.split(' ')[0]}
                         </button>
@@ -852,7 +854,11 @@ const Admin = () => {
                                                     backgroundColor: getServiceColor(booking.serviceId),
                                                     color: booking.serviceId === 'tuneup' ? '#60a5fa' :
                                                         booking.serviceId === 'flatfix' ? '#34d399' : '#fbbf24',
-                                                    border: `1px solid ${getServiceColor(booking.serviceId).replace('0.2', '0.3')}`
+                                                    border: `1px solid ${getServiceColor(booking.serviceId).replace('0.2', '0.3')}`,
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    textAlign: 'center'
                                                 }}
                                             >
                                                 {getServiceLabel(booking.serviceId)}

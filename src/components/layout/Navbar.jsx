@@ -26,7 +26,7 @@ const Navbar = () => {
                     <span className="text-white">{settings.businessName}</span>
                 </Link>
                 <div className="flex items-center gap-2 md:gap-4">
-                    <Link to="/reservar" className="nav-btn-primary transition-colors text-sm md:text-base">
+                    <Link to="/reservar" className="nav-btn-primary transition-colors text-xs md:text-base" style={{ whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         Reservar Turno
                     </Link>
                     <Button
