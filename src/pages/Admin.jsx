@@ -10,7 +10,9 @@ const Admin = () => {
     const [error, setError] = useState(null);
 
     // Auth State
-    const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [isLoggedIn, setIsLoggedIn] = useState(() => {
+        return localStorage.getItem('isAdminLoggedIn') === 'true';
+    });
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [loginError, setLoginError] = useState('');
@@ -27,10 +29,16 @@ const Admin = () => {
         e.preventDefault();
         if (username === 'admin' && password === 'admin123') {
             setIsLoggedIn(true);
+            localStorage.setItem('isAdminLoggedIn', 'true');
             setLoginError('');
         } else {
             setLoginError('Credenciales incorrectas');
         }
+    };
+
+    const handleLogout = () => {
+        setIsLoggedIn(false);
+        localStorage.removeItem('isAdminLoggedIn');
     };
 
     const fetchBookings = () => {
@@ -51,9 +59,13 @@ const Admin = () => {
     };
 
     useEffect(() => {
+        let interval;
         if (isLoggedIn) {
             fetchBookings();
+            // Actualizar automáticamente cada 30 segundos
+            interval = setInterval(fetchBookings, 30000);
         }
+        return () => clearInterval(interval);
     }, [isLoggedIn]);
 
     const handleUpdateNote = async (id, newNote) => {
@@ -566,7 +578,7 @@ const Admin = () => {
                         <div className="hidden md:block h-4 w-[1px] bg-white/10" />
 
                         <Button
-                            onClick={() => setIsLoggedIn(false)}
+                            onClick={handleLogout}
                             variant="ghost"
                             className="text-xs font-bold uppercase tracking-widest opacity-60 hover:opacity-100 hover:text-red-400 transition-all p-0 whitespace-nowrap"
                         >

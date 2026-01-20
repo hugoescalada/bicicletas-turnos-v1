@@ -4,5 +4,8 @@ https://git-scm.com/install/windows
 instalar nodejs:
 https://nodejs.org/en/download/
 
-cargar host:
+Servidor/BD: 
+node server/index.js
+
+Web (con red): 
 npm run dev -- --host

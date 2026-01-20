@@ -8,7 +8,7 @@ const Home = () => {
     const navigate = useNavigate();
 
     return (
-        <div className="container flex-col items-center justify-center text-center" style={{ minHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
+        <div className="container flex-col items-center justify-center text-center relative" style={{ minHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}

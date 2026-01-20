@@ -71,7 +71,7 @@ const Booking = () => {
         <div
             className="container"
             style={{
-                paddingTop: '5rem',
+                paddingTop: '1rem',
                 paddingBottom: '2rem',
                 maxWidth: '800px',
                 display: 'flex',
