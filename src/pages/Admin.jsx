@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import Card from '../components/common/Card';
 import Button from '../components/common/Button';
-import { Calendar, Clock, User, Phone, Mail, Bike, Search, Filter, Edit3, CheckCircle, Printer, MessageCircle, Settings, Wrench, Shield, Zap, X, Save, Trash2 } from 'lucide-react';
+import { Calendar, Clock, User, Phone, Mail, Bike, Search, Filter, Edit3, CheckCircle, Printer, MessageCircle, Settings, Wrench, Shield, Zap, X, Save, Trash2, FileSpreadsheet } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import { useSettings } from '../context/SettingsContext';
 
 const Admin = () => {
@@ -250,6 +251,45 @@ const Admin = () => {
 
         const encodedMsg = encodeURIComponent(message);
         window.open(`https://wa.me/${phoneWithCountry}?text=${encodedMsg}`, '_blank');
+    };
+
+    const handleExportExcel = () => {
+        // Preparamos los datos para Excel
+        const exportData = bookings.map(b => ({
+            ID: b.id,
+            Fecha: formatDate(b.date),
+            Hora: b.time + " Hs",
+            Cliente: b.clientName,
+            Telefono: b.clientPhone,
+            Email: b.clientEmail,
+            Servicio: getServiceLabel(b.serviceId),
+            Bicicleta: b.bikeModel || 'No especificada',
+            Estado: b.completed ? 'Completado' : 'Pendiente',
+            Notas: b.adminNotes || ''
+        }));
+
+        // Crear libro y hoja
+        const worksheet = XLSX.utils.json_to_sheet(exportData);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Reservas");
+
+        // Ajustar anchos de columna (opcional pero recomendado)
+        const wscols = [
+            { wch: 6 },  // ID
+            { wch: 12 }, // Fecha
+            { wch: 10 }, // Hora
+            { wch: 20 }, // Cliente
+            { wch: 15 }, // Telefono
+            { wch: 25 }, // Email
+            { wch: 20 }, // Servicio
+            { wch: 20 }, // Bicicleta
+            { wch: 12 }, // Estado
+            { wch: 30 }  // Notas
+        ];
+        worksheet['!cols'] = wscols;
+
+        // Descargar archivo
+        XLSX.writeFile(workbook, `Reservas_Bicicletas_${new Date().toISOString().split('T')[0]}.xlsx`);
     };
 
     // Filtrado de datos
@@ -758,6 +798,16 @@ const Admin = () => {
                         <div className="hidden md:block h-4 w-[1px] bg-white/10" />
 
                         <div className="flex items-center" style={{ gap: '15px' }}>
+                            <Button
+                                onClick={handleExportExcel}
+                                variant="ghost"
+                                className="text-xs font-bold uppercase tracking-widest opacity-60 hover:opacity-100 hover:text-accent transition-all flex items-center gap-1.5"
+                                style={{ padding: '8px 12px' }}
+                                title="Exportar a Excel (.xlsx)"
+                            >
+                                <FileSpreadsheet size={14} /> <span className="hidden lg:inline">Excel</span>
+                            </Button>
+
                             <Button
                                 onClick={() => setIsSettingsOpen(true)}
                                 variant="ghost"
